@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import struct, sys
 from PIL import Image
 
