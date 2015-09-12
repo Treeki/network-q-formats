@@ -66,7 +66,7 @@ def main(argv):
     print('File does not have .BUN extension!')
     return
   
-  filename = os.path.split(path)
+  filename = os.path.split(path)[1]
   
   try:
     f = open(path + '.BUN', 'rb')
@@ -94,7 +94,13 @@ def main(argv):
   for i in range(image_count):
     offsets.append(struct.unpack_from('<I', data, i * 4)[0])
 
-
+  if not os.path.exists(filename):
+    try:
+      os.mkdir(filename)
+    except:
+      print('Unable to create path ' + filename + '!')
+      return
+    
   for i, offset in enumerate(offsets):
     img = extract_image(data, offset, pal_data)
     if img is not None:
