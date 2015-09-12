@@ -14,7 +14,7 @@ def convert_palette(pal):
 
   return result
 
-def extract_image(data, offset, pal):
+def extract_image(data, offset, pal, pal_index):
   width = u8.unpack_from(data, offset + 2)[0]
   height = u8.unpack_from(data, offset + 3)[0]
   if width == 0 or height == 0:
@@ -41,7 +41,7 @@ def extract_image(data, offset, pal):
       x += spacing_before
       for _ in range(block_width):
         index = u8.unpack_from(data, offset)[0]
-        pix[x,y] = colours[index]
+        pix[x,y] = colours[index + pal_index * 256]
         x += 1
         offset += 1
 
@@ -52,8 +52,9 @@ def main(argv):
   import os.path
   
   parser = argparse.ArgumentParser(description='Converts Network Q .BUN files into .PNG')
-  parser.add_argument('input', metavar='infile', type=str, nargs=1, help='the input file (.BUN)')
-  parser.add_argument('-p', '--pal', type=str, help='optional palette file (.PAL)', dest='pal')
+  parser.add_argument('input', metavar='bunfile', type=str, nargs=1, help='the input file (.BUN)')
+  parser.add_argument('-p', '--pal', metavar='palfile', type=str, help='optional palette file (.PAL)', dest='pal')
+  parser.add_argument('-i', '--index', metavar='index', type=int, help='optional palette index (default 0)', dest='palindex', default=0)
   args = parser.parse_args()
   
   path,ext = os.path.splitext(args.input[0])
@@ -61,6 +62,8 @@ def main(argv):
     palpath = os.path.splitext(args.pal)[0]
   except:
     palpath = path
+  
+  pal_index = args.palindex
   
   if ext != '.BUN':
     print('File does not have .BUN extension!')
@@ -102,7 +105,7 @@ def main(argv):
       return
     
   for i, offset in enumerate(offsets):
-    img = extract_image(data, offset, pal_data)
+    img = extract_image(data, offset, pal_data, pal_index)
     if img is not None:
       img.save(filename + '/%d.png' % i)
 
