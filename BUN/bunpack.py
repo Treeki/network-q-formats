@@ -3,12 +3,24 @@
 import struct, sys
 from PIL import Image
 
+u8 = struct.Struct('<B')
+
+def convert_palette(pal):
+	result = []
+	s = struct.Struct('<BBB')
+
+	for i in range(len(pal) // 3):
+		result.append(s.unpack_from(pal, i * 3))
+
+	return result
+
 def extract_image(data, offset, pal):
-	width = data[offset + 2]
-	height = data[offset + 3]
+	width = u8.unpack_from(data, offset + 2)[0]
+	height = u8.unpack_from(data, offset + 3)[0]
 	if width == 0 or height == 0:
 		return None
 
+	colours = convert_palette(pal)
 	img = Image.new('RGB', (width,height))
 	pix = img.load()
 
@@ -17,22 +29,19 @@ def extract_image(data, offset, pal):
 		x = 0
 
 		while True:
-			if data[offset] == 0:
+			block_width = u8.unpack_from(data, offset)[0]
+			if block_width == 0:
 				# end of row
 				offset += 1
 				break
 
-			block_width = data[offset]
-			spacing_before = data[offset + 1]
+			spacing_before = u8.unpack_from(data, offset + 1)[0]
 			offset += 2
 
 			x += spacing_before
 			for _ in range(block_width):
-				index = data[offset]
-				r = pal[index * 3]
-				g = pal[index * 3 + 1]
-				b = pal[index * 3 + 2]
-				pix[x,y] = (r,g,b)
+				index = u8.unpack_from(data, offset + 1)[0]
+				pix[x,y] = colours[index]
 				x += 1
 				offset += 1
 
@@ -54,7 +63,7 @@ def main(argv):
     palpath = path
   
   if ext != '.BUN':
-    print 'File does not have .BUN extension!'
+    print('File does not have .BUN extension!')
     return
   
   filename = os.path.split(path)
@@ -62,7 +71,7 @@ def main(argv):
   try:
     f = open(path + '.BUN', 'rb')
   except IOError as e:
-    print 'Unable to open BUN file!'
+    print('Unable to open BUN file!')
     return
   else:
     data = f.read()
@@ -71,7 +80,7 @@ def main(argv):
   try:
     f = open(palpath + '.PAL', 'rb')
   except IOError as e:
-    print 'Unable to open PAL file!'
+    print('Unable to open PAL file!')
     return
   else:
     pal_data = f.read()
