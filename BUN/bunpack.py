@@ -40,7 +40,7 @@ def extract_image(data, offset, pal):
 
       x += spacing_before
       for _ in range(block_width):
-        index = u8.unpack_from(data, offset + 1)[0]
+        index = u8.unpack_from(data, offset)[0]
         pix[x,y] = colours[index]
         x += 1
         offset += 1
